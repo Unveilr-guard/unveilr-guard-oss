@@ -112,5 +112,42 @@ func TestScanNeverReturnsASecretValue(t *testing.T) {
 				t.Errorf("Scan() returned an unredacted-looking value for %q: %q", s.Name, a)
 			}
 		}
+		if secretValueShape.MatchString(s.URL) {
+			t.Errorf("Scan() returned an unredacted-looking URL for %q: %q", s.Name, s.URL)
+		}
+	}
+}
+
+func TestRedactURLStripsUserinfo(t *testing.T) {
+	t.Parallel()
+	got := redactURL("https://user:secretpass@mcp.example.com/mcp")
+	if strings.Contains(got, "secretpass") {
+		t.Fatalf("userinfo leaked: %q", got)
+	}
+}
+
+func TestRedactURLRedactsCredentialShapedQueryParams(t *testing.T) {
+	t.Parallel()
+	got := redactURL("https://mcp.example.com/mcp?api_key=sk-abcdefghijklmnopqrstuvwx&region=us")
+	if strings.Contains(got, "sk-abcdefghijklmnopqrstuvwx") {
+		t.Fatalf("query-param secret leaked: %q", got)
+	}
+	if !strings.Contains(got, "region=us") {
+		t.Errorf("ordinary query param should survive: %q", got)
+	}
+}
+
+func TestRedactURLLeavesAnOrdinaryURLAlone(t *testing.T) {
+	t.Parallel()
+	const in = "https://mcp.workos.com/mcp"
+	if got := redactURL(in); got != in {
+		t.Errorf("got %q, want unchanged %q", got, in)
+	}
+}
+
+func TestRedactURLHandlesAnEmptyURL(t *testing.T) {
+	t.Parallel()
+	if got := redactURL(""); got != "" {
+		t.Errorf("got %q, want empty (stdio servers have no URL)", got)
 	}
 }

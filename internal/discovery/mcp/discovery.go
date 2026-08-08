@@ -72,7 +72,7 @@ func Scan() []Server {
 				// one place every consumer (terminal, --json, RegisterServer)
 				// necessarily passes through, so there is no call site left
 				// that could forget to do it.
-				Args: redactArgs(s.Args), URL: s.URL, Transport: transport,
+				Args: redactArgs(s.Args), URL: redactURL(s.URL), Transport: transport,
 			})
 		}
 	}

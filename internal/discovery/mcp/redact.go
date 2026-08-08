@@ -4,6 +4,7 @@
 package mcp
 
 import (
+	neturl "net/url"
 	"regexp"
 	"strings"
 )
@@ -79,4 +80,37 @@ func splitFlagValue(s string) (key, val string, ok bool) {
 		return "", "", false
 	}
 	return s[:idx], s[idx+1:], true
+}
+
+// redactURL strips credential-shaped material from a server URL. args are
+// not the only place a streamable-HTTP MCP endpoint can carry a live
+// credential — userinfo (https://user:key@host/mcp) and query parameters
+// (?api_key=...) both legally can too, and redactArgs does not look at URLs.
+func redactURL(raw string) string {
+	u, err := neturl.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	if u.User != nil {
+		u.User = neturl.User(redacted)
+	}
+	if q := u.Query(); len(q) > 0 {
+		for k, vs := range q {
+			if secretFlagName.MatchString(k) {
+				for i := range vs {
+					vs[i] = redacted
+				}
+				q[k] = vs
+				continue
+			}
+			for i, v := range vs {
+				if secretValueShape.MatchString(v) {
+					vs[i] = redacted
+				}
+			}
+			q[k] = vs
+		}
+		u.RawQuery = q.Encode()
+	}
+	return u.String()
 }
