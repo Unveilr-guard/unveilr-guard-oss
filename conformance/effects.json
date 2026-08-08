@@ -1,0 +1,127 @@
+{
+  "$comment": "Cross-engine conformance fixtures for effect combination. SOURCE OF TRUTH: github.com/unveilr/unveilr-guard/conformance/effects.json. Vendored copies elsewhere MUST be byte-identical; each runner asserts the sha256 in README.md.",
+  "version": 1,
+  "precedence": [
+    "allow",
+    "redact",
+    "sanitize",
+    "scoped_token",
+    "require_approval",
+    "step_up",
+    "deny"
+  ],
+  "pairs": [
+    {
+      "name": "allow loses to deny",
+      "a": "allow",
+      "b": "deny",
+      "want": "deny",
+      "why": "The whole point of forbid-overrides. If this ever inverts, every allow policy becomes a bypass."
+    },
+    {
+      "name": "combination is commutative",
+      "a": "deny",
+      "b": "allow",
+      "want": "deny",
+      "why": "Order of evaluation must not change the outcome, or the decision depends on how policies happened to be loaded."
+    },
+    {
+      "name": "idempotent",
+      "a": "deny",
+      "b": "deny",
+      "want": "deny",
+      "why": "Two rules agreeing must not escalate past what either said."
+    },
+    {
+      "name": "step_up outranks require_approval",
+      "a": "require_approval",
+      "b": "step_up",
+      "want": "step_up",
+      "why": "Re-authentication is strictly stronger than a second pair of eyes."
+    },
+    {
+      "name": "require_approval outranks scoped_token",
+      "a": "scoped_token",
+      "b": "require_approval",
+      "want": "require_approval",
+      "why": "A narrowed credential still proceeds unattended; an approval does not."
+    },
+    {
+      "name": "scoped_token outranks sanitize",
+      "a": "sanitize",
+      "b": "scoped_token",
+      "want": "scoped_token",
+      "why": "Constraining authority is stronger than rewriting an argument."
+    },
+    {
+      "name": "sanitize outranks redact",
+      "a": "redact",
+      "b": "sanitize",
+      "want": "sanitize"
+    },
+    {
+      "name": "redact outranks allow",
+      "a": "allow",
+      "b": "redact",
+      "want": "redact"
+    },
+    {
+      "name": "allow with itself stays allow",
+      "a": "allow",
+      "b": "allow",
+      "want": "allow",
+      "why": "Guards the inverse failure: a combinator that escalated on agreement would deny everything."
+    }
+  ],
+  "sets": [
+    {
+      "name": "one deny in a permissive set",
+      "effects": ["allow", "redact", "allow", "deny", "sanitize"],
+      "want": "deny",
+      "why": "Adding a policy must never widen access, regardless of position in the set."
+    },
+    {
+      "name": "no deny present",
+      "effects": ["allow", "redact", "sanitize"],
+      "want": "sanitize"
+    },
+    {
+      "name": "single effect",
+      "effects": ["scoped_token"],
+      "want": "scoped_token"
+    },
+    {
+      "name": "all effects at once",
+      "effects": [
+        "allow",
+        "redact",
+        "sanitize",
+        "scoped_token",
+        "require_approval",
+        "step_up",
+        "deny"
+      ],
+      "want": "deny"
+    }
+  ],
+  "unknownEffects": {
+    "$comment": "Engines DIVERGE here today; see conformance/README.md. These cases are declared, not yet jointly enforced. `expectation` is the agreed target behaviour, `enforcedBy` lists the engines currently asserted against it.",
+    "expectation": "fail-closed: an effect absent from `precedence` is treated as at least as restrictive as deny, never discarded",
+    "enforcedBy": ["go", "python", "typescript"],
+    "cases": [
+      {
+        "name": "unknown vs allow",
+        "a": "quarantine",
+        "b": "allow",
+        "wantNot": "allow",
+        "why": "An effect from a newer policy bundle must not be silently dropped in favour of the permissive one."
+      },
+      {
+        "name": "unknown vs deny",
+        "a": "quarantine",
+        "b": "deny",
+        "wantNot": "allow"
+      }
+    ]
+  }
+}

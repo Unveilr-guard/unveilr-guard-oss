@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2026 <UNVEILR LEGAL ENTITY>
+# SPDX-License-Identifier: AGPL-3.0-only
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # ubuntu-22.04, not -latest. A binary linked against a newer glibc will not
+    # run on an older one, and this CLI is installed on whatever the user has.
+    # Building on the oldest supported runner sets the floor deliberately rather
+    # than inheriting whatever GitHub upgrades to next.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+      - run: make lint
+      - run: make test
+      - name: License boundary (ADR-007)
+        run: make license-check
+
+  conformance:
+    # Split out so a failure reads as "the engines disagree" in the checks list,
+    # not as a generic test failure. A divergence means an action denied at one
+    # enforcement point is permitted at another.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: make conformance
+
+  fuzz:
+    # Scan runs on attacker-influenced tool arguments, so a panic there is a
+    # denial of service in the enforcement path. Short run per PR; the corpus
+    # accumulates in testdata.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: make fuzz
+
+  build-matrix:
+    # Proves the binary builds for every platform we claim to support, before
+    # anyone tries to install it there.
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: go build ./...
