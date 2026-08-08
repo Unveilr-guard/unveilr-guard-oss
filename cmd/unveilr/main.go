@@ -22,6 +22,7 @@ import (
 	mcpadapter "github.com/unveilr/unveilr-guard/internal/adapters/mcp"
 	"github.com/unveilr/unveilr-guard/internal/cloud/client"
 	"github.com/unveilr/unveilr-guard/internal/config"
+	agentDiscovery "github.com/unveilr/unveilr-guard/internal/discovery/agent"
 	mcpdiscovery "github.com/unveilr/unveilr-guard/internal/discovery/mcp"
 	"github.com/unveilr/unveilr-guard/internal/version"
 )
@@ -34,7 +35,7 @@ Usage:
                                          (secrets, injection, unsafe MCP config,
                                          PII). --fail-on: info|low|medium|high
                                          |critical|none (default critical).
-  unveilr scan                          Discover locally-configured MCP servers
+  unveilr scan                          Discover local coding agents + MCP servers
   unveilr register [--all]              Register discovered servers with the SaaS
   unveilr proxy --server <id> -- CMD…   Shield a local stdio MCP server
   unveilr status                        Show config + SaaS connectivity
@@ -95,18 +96,41 @@ func requireOnlineAuth(cfg config.Config) {
 	}
 }
 
+// scanResult is the --json shape: agents and MCP servers together, matching
+// the enterprise SDK's local_discovery() combination — the same two
+// questions ("how many agents", "what MCP servers are configured") answered
+// from the same command. This is a breaking change to the previous bare-array
+// --json shape; pre-1.0 (see README's Status section), documented here rather
+// than versioned, since nothing else in the tree parsed the old shape.
+type scanResult struct {
+	Agents     []agentDiscovery.Agent `json:"agents"`
+	McpServers []mcpdiscovery.Server  `json:"mcpServers"`
+}
+
 func cmdScan(args []string) {
 	fs := flag.NewFlagSet("scan", flag.ExitOnError)
 	asJSON := fs.Bool("json", false, "output JSON")
 	_ = fs.Parse(args)
 
+	agents := agentDiscovery.Detect()
 	servers := mcpdiscovery.Scan()
+
 	if *asJSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		_ = enc.Encode(servers)
+		_ = enc.Encode(scanResult{Agents: agents, McpServers: servers})
 		return
 	}
+
+	if len(agents) == 0 {
+		fmt.Println("No locally-installed coding agents found.")
+	} else {
+		fmt.Printf("Discovered %d coding agent(s):\n", len(agents))
+		for _, a := range agents {
+			fmt.Printf("  • %-20s (%s)\n", a.Name, a.Evidence)
+		}
+	}
+	fmt.Println()
 	if len(servers) == 0 {
 		fmt.Println("No local MCP servers found in known config locations.")
 		return
@@ -179,7 +203,7 @@ func cmdStatus(cfg config.Config) {
 		return
 	}
 	fmt.Println("SaaS     : reachable ✓")
-	fmt.Printf("Local    : %d MCP server(s) discovered\n", len(mcpdiscovery.Scan()))
+	fmt.Printf("Local    : %d agent(s), %d MCP server(s) discovered\n", len(agentDiscovery.Detect()), len(mcpdiscovery.Scan()))
 }
 
 func cmdPolicy(cfg config.Config, args []string) {

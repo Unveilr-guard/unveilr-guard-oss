@@ -12,9 +12,9 @@ Discover what your agents can reach. Understand their blast radius. Block
 dangerous supported actions before they run.
 
 ```console
-$ unveilr discover
-$ unveilr scan
-$ unveilr guard mcp
+$ unveilr scan                  # what agents and MCP servers exist on this machine
+$ unveilr .                     # what AI-SDLC risk is in this repository
+$ unveilr proxy --server <id> -- <command>   # shield a local MCP server
 ```
 
 Open source, AGPL-3.0-only. Works entirely offline — no account, no telemetry,
@@ -52,34 +52,43 @@ go install github.com/unveilr/unveilr-guard/cmd/unveilr@latest
 
 ## What it does
 
-### Discover
+### Discover (`unveilr scan`)
 
-Finds locally-configured MCP servers across Claude Desktop, Cursor, VS Code and
-project `.mcp.json`, plus the identities and credential *metadata* the agent can
-reach.
+Fingerprints locally-installed coding agents (Claude Code, Claude Desktop,
+Cursor, GitHub Copilot — presence evidence only) and finds locally-configured
+MCP servers across those same clients plus project `.mcp.json`.
 
-**Credential values are never read, printed, logged or stored.** Discovery
-records that a credential exists and where — never its material.
+**Credential values are never read, printed, logged or stored.** Any
+credential-shaped value in a server's arguments or URL is replaced with
+`[REDACTED]` before it leaves the process — the flag or parameter name
+survives ("this server holds an API key" is the useful signal), only the
+value is stripped.
 
-### Scan
+### Inspect (`unveilr <path>`)
 
-Runs detectors over the discovered inventory and reports findings with stable
-`UVR-XXXX` IDs, evidence, and the remediation that closes them.
+Runs detectors over a repository and reports findings — secrets, prompt
+injection, command/SQL injection, path traversal, PII — with a stable rule ID,
+severity, and the message that explains it. The bare, unqualified invocation:
+this is the product's headline capability, not one action among several, and
+`scan` was already the name for agent/MCP-server discovery above.
 
 ```console
-HIGH  UVR-1203
-MCP filesystem scope exceeds project boundary
+$ unveilr . --fail-on high
+1 finding(s) across 12 file(s) scanned under . (risk score 40/100):
 
-Path:
-  Developer → Cursor → filesystem MCP → /
-
-Run:
-  unveilr explain UVR-1203
+  CRITICAL SEC-AWS  AWS access key id
+           handler.py
 ```
 
-Every ID maps to exactly one issue and is never recycled — so a suppression
-written today still means the same thing next quarter. See
-[docs/findings/catalog.yaml](docs/findings/catalog.yaml).
+`--json` for machine output, `--fail-on <severity>` to gate CI on it (exit
+non-zero at or above the threshold; default `critical`).
+
+[docs/findings/catalog.yaml](docs/findings/catalog.yaml) documents 29 rules
+under `UVR-XXXX` IDs — that catalogue is the target shape, not the shipped
+one: the detector currently implements 11 rules under a different scheme
+entirely (`SEC-AWS`, `PI-001`, `CI-002`, …, see
+[internal/scanner/detect/detect.go](internal/scanner/detect/detect.go)).
+Neither the ID format nor the coverage match yet.
 
 ### Guard
 
