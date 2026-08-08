@@ -1,8 +1,14 @@
 // SPDX-FileCopyrightText: 2026 <UNVEILR LEGAL ENTITY>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Command unveilr-shield is the Local Shield CLI: discover, register, and shield local
+// Command unveilr is the Local Shield CLI: discover, register, and shield local
 // MCP servers, and test policy decisions against the Unveilr SaaS.
+//
+// It does not scan a repository for AI-SDLC findings — that detection engine
+// (internal/scanner/detect) exists and is tested, but has no command wired to
+// it yet. `scan` here means MCP server discovery, deliberately, so don't
+// promise a different `scan` in the usage text below: it would describe a
+// command this binary does not have.
 package main
 
 import (
@@ -18,21 +24,21 @@ import (
 	"github.com/unveilr/unveilr-guard/internal/version"
 )
 
-const usage = `unveilr-shield — Local Shield CLI (v%s)
+const usage = `unveilr — Local Shield CLI (v%s)
 
 Usage:
-  unveilr-shield scan                          Discover locally-configured MCP servers
-  unveilr-shield register [--all]              Register discovered servers with the SaaS
-  unveilr-shield proxy --server <id> -- CMD…   Shield a local stdio MCP server
-  unveilr-shield status                        Show config + SaaS connectivity
-  unveilr-shield policy test --server <id> --tool <name> [--args JSON] [--auth aal1|aal2]
+  unveilr scan                          Discover locally-configured MCP servers
+  unveilr register [--all]              Register discovered servers with the SaaS
+  unveilr proxy --server <id> -- CMD…   Shield a local stdio MCP server
+  unveilr status                        Show config + SaaS connectivity
+  unveilr policy test --server <id> --tool <name> [--args JSON] [--auth aal1|aal2]
 
 Environment:
   UNVEILR_SAAS_URL    SaaS admin API base URL (default http://localhost:8080)
   UNVEILR_API_TOKEN   Tenant-bound bearer or service token (required online)
 
-Note: this is the Local Shield (govern local MCP servers). To scan a repository
-for AI-SDLC findings, use the separate scanner CLI: ` + "`unveilr scan`" + `.
+Note: ` + "`scan`" + ` here means MCP server discovery. This CLI does not scan a
+repository for AI-SDLC findings.
 `
 
 func main() {
@@ -63,7 +69,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
 		switch os.Args[1] {
 		case "login", "upload":
-			fmt.Fprintln(os.Stderr, "hint: that command belongs to the Unveilr scanner CLI (`unveilr`), not the Local Shield.")
+			// Not a hint at a different binary: nothing in this repository
+			// implements repository scanning yet (see the package doc comment).
+			fmt.Fprintln(os.Stderr, "hint: repository scanning is not implemented in this CLI.")
 		}
 		os.Exit(1)
 	}
@@ -136,7 +144,7 @@ func cmdProxy(cfg config.Config, args []string) {
 	_ = fs.Parse(args)
 	rest := fs.Args()
 	if *serverID == "" || len(rest) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: unveilr-shield proxy --server <id> -- <command> [args...]")
+		fmt.Fprintln(os.Stderr, "usage: unveilr proxy --server <id> -- <command> [args...]")
 		os.Exit(1)
 	}
 	p := mcpadapter.New(cfg, *serverID)
@@ -165,7 +173,7 @@ func cmdStatus(cfg config.Config) {
 
 func cmdPolicy(cfg config.Config, args []string) {
 	if len(args) == 0 || args[0] != "test" {
-		fmt.Fprintln(os.Stderr, "usage: unveilr-shield policy test --server <id> --tool <name> [--args JSON] [--auth aal1|aal2]")
+		fmt.Fprintln(os.Stderr, "usage: unveilr policy test --server <id> --tool <name> [--args JSON] [--auth aal1|aal2]")
 		os.Exit(1)
 	}
 	fs := flag.NewFlagSet("policy test", flag.ExitOnError)
