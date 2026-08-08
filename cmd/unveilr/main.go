@@ -1,14 +1,16 @@
 // SPDX-FileCopyrightText: 2026 <UNVEILR LEGAL ENTITY>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Command unveilr is the Local Shield CLI: discover, register, and shield local
-// MCP servers, and test policy decisions against the Unveilr SaaS.
+// Command unveilr is the Local Shield CLI: scan a repository for AI-SDLC
+// findings, discover/register/shield local MCP servers, and test policy
+// decisions against the Unveilr SaaS.
 //
-// It does not scan a repository for AI-SDLC findings — that detection engine
-// (internal/scanner/detect) exists and is tested, but has no command wired to
-// it yet. `scan` here means MCP server discovery, deliberately, so don't
-// promise a different `scan` in the usage text below: it would describe a
-// command this binary does not have.
+// Repository scanning is the bare invocation — `unveilr <path>`, no verb —
+// deliberately: it is the product's headline capability, not one governance
+// action among several, and it existed as a tested engine
+// (internal/scanner/detect) with no command reaching it before this file.
+// `scan` was already taken by MCP server discovery, and stays that way; see
+// cmdInspect in inspect.go for the repository-scanning entry point.
 package main
 
 import (
@@ -27,6 +29,11 @@ import (
 const usage = `unveilr — Local Shield CLI (v%s)
 
 Usage:
+  unveilr <path> [--json] [--fail-on tier]
+                                         Scan a repository for AI-SDLC findings
+                                         (secrets, injection, unsafe MCP config,
+                                         PII). --fail-on: info|low|medium|high
+                                         |critical|none (default critical).
   unveilr scan                          Discover locally-configured MCP servers
   unveilr register [--all]              Register discovered servers with the SaaS
   unveilr proxy --server <id> -- CMD…   Shield a local stdio MCP server
@@ -37,8 +44,8 @@ Environment:
   UNVEILR_SAAS_URL    SaaS admin API base URL (default http://localhost:8080)
   UNVEILR_API_TOKEN   Tenant-bound bearer or service token (required online)
 
-Note: ` + "`scan`" + ` here means MCP server discovery. This CLI does not scan a
-repository for AI-SDLC findings.
+Note: ` + "`scan`" + ` (the subcommand) means MCP server discovery, not repository
+scanning — that is the bare ` + "`unveilr <path>`" + ` invocation above.
 `
 
 func main() {
@@ -66,13 +73,17 @@ func main() {
 	case "-v", "--version", "version":
 		fmt.Println(version.Version)
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
-		switch os.Args[1] {
-		case "login", "upload":
-			// Not a hint at a different binary: nothing in this repository
-			// implements repository scanning yet (see the package doc comment).
-			fmt.Fprintln(os.Stderr, "hint: repository scanning is not implemented in this CLI.")
+		// No verb: `unveilr <path>` scans a repository for AI-SDLC findings —
+		// the bare, unqualified invocation, because this is the product's
+		// headline capability, not one governance action among several (see
+		// the package doc comment). Only dispatched when the argument
+		// actually resolves to something on disk, so a genuine typo of a
+		// known subcommand still fails as "unknown command" rather than as a
+		// confusing file-not-found.
+		if _, err := os.Stat(os.Args[1]); err == nil {
+			os.Exit(cmdInspect(os.Args[1], os.Args[2:]))
 		}
+		fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
 		os.Exit(1)
 	}
 }
