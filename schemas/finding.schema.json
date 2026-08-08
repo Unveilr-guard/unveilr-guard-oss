@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard.unveilr.ai/schemas/v1alpha1/finding.schema.json",
+  "title": "Finding",
+  "description": "A security finding about the agent environment. Every finding carries evidence: a claim without evidence is an opinion, and it will be triaged as noise once and ignored forever.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "id", "ruleId", "title", "severity", "confidence", "category", "affectedEntity", "evidence", "detector"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": { "const": "guard.unveilr.ai/v1alpha1" },
+    "kind": { "const": "Finding" },
+    "id": { "type": "string", "description": "Instance identifier for this occurrence." },
+    "ruleId": {
+      "type": "string",
+      "pattern": "^UVR-[0-9]{4}$",
+      "description": "Stable catalogue ID. One ID means exactly one semantic issue and IDs are NEVER recycled — a retired check keeps its ID marked deprecated. See docs/findings/catalog.yaml."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "severity": { "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+    "confidence": {
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "description": "Three bands only. A percentage would be fake precision — the underlying analysis does not support it."
+    },
+    "category": { "type": "string", "examples": ["identity", "execution", "mcp", "aws", "supply-chain", "filesystem"] },
+    "affectedEntity": {
+      "type": "object",
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "examples": ["agent", "identity", "mcp-server", "tool", "credential-ref"] },
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "description": "What was actually observed. MUST NOT contain secret values — record that a credential exists and where, never its material.",
+      "items": {
+        "type": "object",
+        "required": ["kind", "detail"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "type": "string", "examples": ["config-file", "env-var-name", "iam-policy", "mcp-manifest"] },
+          "source": { "type": "string", "description": "Path or origin. Redacted where it would leak private information." },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "path": {
+      "type": "array",
+      "description": "The relationship path that makes this reachable, ordered from origin to target. This is what turns a fact into a blast radius.",
+      "items": {
+        "type": "object",
+        "required": ["type", "id"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string" },
+          "id": { "type": "string" },
+          "via": { "type": "string", "description": "The relationship or capability traversed, e.g. sts:AssumeRole." }
+        }
+      }
+    },
+    "impact": { "type": "string" },
+    "remediation": { "type": "string", "description": "The action that closes this. A finding without one is a statistic." },
+    "references": { "type": "array", "items": { "type": "string", "format": "uri" } },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "What the analysis could not resolve — e.g. conditional IAM that could not be fully evaluated. Stating this is what makes the confidence band meaningful."
+    },
+    "firstObservedAt": { "type": "string", "format": "date-time" },
+    "detector": { "type": "string" },
+    "detectorVersion": { "type": "string" }
+  }
+}

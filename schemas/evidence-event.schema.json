@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard.unveilr.ai/schemas/v1alpha1/evidence-event.schema.json",
+  "title": "EvidenceEvent",
+  "description": "The record of a runtime decision. Every blocked action produces one. Arguments pass through redaction before persistence — the evidence store must never become the place secrets leak.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "eventId", "timestamp", "intent", "decision", "adapter", "execution"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": { "const": "guard.unveilr.ai/v1alpha1" },
+    "kind": { "const": "EvidenceEvent" },
+    "eventId": { "type": "string", "pattern": "^evt_[A-Za-z0-9]{8,}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "actor": { "$ref": "action-intent.schema.json#/properties/actor" },
+    "agent": { "$ref": "action-intent.schema.json#/properties/agent" },
+    "intent": { "$ref": "action-intent.schema.json" },
+    "decision": { "$ref": "decision.schema.json" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "ruleId": { "type": "string" },
+        "policySetHash": { "type": "string" }
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "required": ["name", "authoritative"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "examples": ["mcp", "shell"] },
+        "version": { "type": "string" },
+        "authoritative": {
+          "type": "boolean",
+          "description": "True only when this adapter had authoritative control of the execution path. An action MUST NOT be recorded as blocked when this is false — inferring a block we did not perform is the worst failure this schema can permit."
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": ["allowed", "blocked", "warned", "unsupported", "adapter-error"],
+          "description": "'unsupported' and 'adapter-error' are distinct from 'allowed': the action may have proceeded, but not because policy permitted it."
+        },
+        "detail": { "type": "string" }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What redaction did, so a reader knows the record is incomplete by design rather than by accident.",
+      "properties": {
+        "applied": { "type": "boolean" },
+        "fields": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

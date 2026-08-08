@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard.unveilr.ai/schemas/v1alpha1/decision.schema.json",
+  "title": "Decision",
+  "description": "The outcome of evaluating an ActionIntent. The effect vocabulary is deliberately the FULL enterprise set so a local decision and a centrally-returned decision share one schema and no redesign is needed later. The OSS evaluator implements allow/deny/warn only and MUST report the others as unsupported rather than silently downgrading them.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "intentId", "effect", "timestamp", "engine"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": { "const": "guard.unveilr.ai/v1alpha1" },
+    "kind": { "const": "Decision" },
+    "intentId": { "type": "string", "pattern": "^act_[A-Za-z0-9]{8,}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+
+    "effect": {
+      "description": "Ordered by increasing restriction. Combination is forbid-overrides: the most restrictive matching effect wins, so adding a policy can never widen access. This ordering mirrors the enterprise policy engine exactly.",
+      "enum": ["allow", "redact", "sanitize", "scoped_token", "require_approval", "step_up", "deny"]
+    },
+
+    "supportedLocally": {
+      "type": "boolean",
+      "description": "False when the effect requires capability this build does not have (approval surfaces, credential brokering, step-up). The caller MUST NOT treat an unsupported effect as an allow."
+    },
+
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable, for whoever reads a denial at 03:00."
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" },
+      "description": "Machine-matchable, for rules and dashboards. Emitted ALONGSIDE reason, never instead of it. First-occurrence order: the first code is the gate that fired first.",
+      "examples": [["SCOPE_DENIED"], ["POLICY_DENY", "MISSING_SCOPE"]]
+    },
+
+    "matchedPolicy": { "type": "string", "description": "metadata.name of the matching policy." },
+    "matchedRule": { "type": "string", "description": "spec.rules[].id of the matching rule." },
+
+    "engine": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "examples": ["unveilr-guard-local", "unveilr-enterprise"] },
+        "version": { "type": "string" },
+        "policySetHash": {
+          "type": "string",
+          "description": "Hash of the evaluated policy set. Makes a decision reproducible: without it, a decision cannot be replayed and therefore cannot be evidence."
+        }
+      }
+    },
+
+    "constraints": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Obligations attached to a non-deny effect. ADVISORY unless the enforcement point honours them — a constraint that nothing applies must never be reported as applied.",
+      "properties": {
+        "maskFields": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

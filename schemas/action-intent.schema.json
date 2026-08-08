@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard.unveilr.ai/schemas/v1alpha1/action-intent.schema.json",
+  "title": "ActionIntent",
+  "description": "An operation an AI agent is preparing to perform, normalised by an adapter before policy evaluation. Adapters observe different things — an MCP tool call, a shell command, a cloud API call — and all of them produce this shape so policy is written once. Provider specifics live under action.provider/action.name; no provider is part of the generic structure.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "id", "timestamp", "agent", "action"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": { "const": "guard.unveilr.ai/v1alpha1" },
+    "kind": { "const": "ActionIntent" },
+    "id": {
+      "type": "string",
+      "pattern": "^act_[A-Za-z0-9]{8,}$",
+      "description": "Stable identifier for this intent. Referenced by the Decision and the EvidenceEvent so the three can be correlated after the fact."
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+
+    "agent": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "description": "The agent about to act.",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "examples": ["claude-code", "cursor"] },
+        "type": { "type": "string", "examples": ["coding-agent", "mcp-client"] },
+        "version": {
+          "type": "string",
+          "description": "The agent's own release string, when it reports one. Attested by the agent, never measured."
+        }
+      }
+    },
+
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Who the agent is acting for. 'unattended' is a real answer and MUST be distinguishable from an absent actor: a scheduled agent genuinely has no human behind it, and treating silence as autonomy is a different claim from recording it.",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["human", "service", "customer", "unattended"] },
+        "id": { "type": "string", "description": "Required unless type is 'unattended'." },
+        "clientApplication": { "type": "string" }
+      },
+      "allOf": [{
+        "if": { "properties": { "type": { "not": { "const": "unattended" } } } },
+        "then": { "required": ["type", "id"] }
+      }]
+    },
+
+    "action": {
+      "type": "object",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Open vocabulary. Known values are listed as examples, not enforced, so a new adapter does not require a schema change.",
+          "examples": ["mcp.tool", "shell.exec", "cloud.api", "fs.write"]
+        },
+        "provider": { "type": "string", "examples": ["aws", "github", "filesystem"] },
+        "name": { "type": "string", "minLength": 1, "examples": ["iam:PassRole", "rm -rf", "read_file"] },
+        "arguments": {
+          "type": "object",
+          "description": "Tool or command arguments. MUST be redacted before persistence — see redaction requirements. Never store raw secret values here.",
+          "additionalProperties": true
+        }
+      }
+    },
+
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "examples": ["aws.iam.role", "file", "repo"] },
+        "id": { "type": "string" },
+        "dataClasses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "examples": [["secrets", "pii", "production_data"]]
+        }
+      }
+    },
+
+    "context": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Evaluation context. Values supplied by the caller are ATTESTED, not measured: they may escalate a decision but must never weaken one, or the cheapest bypass is to claim to be safe.",
+      "properties": {
+        "environment": { "type": "string", "examples": ["production", "staging", "development", "local"] },
+        "workspace": { "type": "string" }
+      }
+    }
+  }
+}

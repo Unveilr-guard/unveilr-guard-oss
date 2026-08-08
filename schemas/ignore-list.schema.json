@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard.unveilr.ai/schemas/v1alpha1/ignore-list.schema.json",
+  "title": "IgnoreList",
+  "description": "Suppression of legitimate findings. A reason is mandatory: an unexplained suppression is indistinguishable from an oversight six months later.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": { "const": "guard.unveilr.ai/v1alpha1" },
+    "kind": { "const": "IgnoreList" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "finding": { "type": "string", "pattern": "^UVR-[0-9]{4}$" },
+          "scope": { "type": "string", "description": "Optional entity this applies to. Absent means the whole project." },
+          "reason": { "type": "string", "minLength": 10 },
+          "expiresAt": { "type": "string", "format": "date", "description": "Strongly encouraged. A suppression with no expiry outlives the reason for it." }
+        }
+      }
+    }
+  }
+}

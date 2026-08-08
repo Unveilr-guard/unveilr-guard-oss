@@ -1,0 +1,241 @@
+# Unveilr Guard — finding catalogue
+#
+# The registry of stable finding IDs. Rules for changing this file:
+#
+#   * One ID means exactly ONE semantic issue.
+#   * IDs are NEVER recycled. A retired check keeps its ID with
+#     `status: deprecated` and a note pointing at its replacement.
+#   * Broadening what a detector means requires a NEW id, not an edit —
+#     otherwise a suppression written last quarter silently changes target.
+#   * `severity` is the default; a detector may lower it with justification,
+#     never raise it silently.
+#   * `platformRule` records the corresponding rule in the Unveilr platform's
+#     detection set where one exists, so the two do not drift apart. It is a
+#     provenance note, not an import — see ADR-007.
+#
+# Severity: INFO | LOW | MEDIUM | HIGH | CRITICAL
+# Status:   planned | implemented | deprecated
+
+version: 1
+apiVersion: guard.unveilr.ai/v1alpha1
+
+findings:
+
+  # ── Identity ────────────────────────────────────────────────────────────
+  - id: UVR-1001
+    title: Agent inherits overly privileged cloud identity
+    category: identity
+    severity: HIGH
+    status: planned
+    summary: >-
+      The identity available to the agent carries privileges far beyond the
+      agent's stated task. The agent inherits everything that identity can do.
+
+  - id: UVR-1002
+    title: Agent-accessible identity can assume a privileged role
+    category: identity
+    severity: HIGH
+    status: planned
+    summary: >-
+      A role-assumption path leads from the agent's identity to a materially
+      more privileged role. This is the canonical blast-radius path.
+
+  - id: UVR-1003
+    title: Long-lived cloud credential available to agent
+    category: identity
+    severity: HIGH
+    status: planned
+    platformRule: SEC-AWS
+    summary: >-
+      A standing, non-expiring credential is resolvable by the agent. Unlike a
+      session credential, nothing revokes it on its own.
+
+  - id: UVR-1004
+    title: Shared identity used by both human and agent
+    category: identity
+    severity: MEDIUM
+    status: planned
+    summary: >-
+      Actions cannot be attributed to the agent or the human, so neither audit
+      nor containment can target one without the other.
+
+  - id: UVR-1005
+    title: Agent execution is not attributable to a distinct identity
+    category: identity
+    severity: MEDIUM
+    status: planned
+
+  # ── Execution ───────────────────────────────────────────────────────────
+  - id: UVR-1101
+    title: Agent can execute unrestricted shell commands
+    category: execution
+    severity: HIGH
+    status: planned
+
+  - id: UVR-1102
+    title: Agent can execute against a production environment
+    category: execution
+    severity: HIGH
+    status: planned
+
+  - id: UVR-1103
+    title: Agent can invoke privileged local execution
+    category: execution
+    severity: MEDIUM
+    status: planned
+
+  - id: UVR-1104
+    title: Agent-controlled input reaches command execution
+    category: execution
+    severity: HIGH
+    status: planned
+    platformRule: CI-001
+    summary: >-
+      Untrusted content the agent processes can reach a command interpreter.
+
+  # ── MCP ─────────────────────────────────────────────────────────────────
+  - id: UVR-1201
+    title: MCP server exposes dangerous tool capability
+    category: mcp
+    severity: HIGH
+    status: implemented
+    detector: mcp/dangerous-capability
+
+  - id: UVR-1202
+    title: MCP tool authorization is absent or indeterminate
+    category: mcp
+    severity: MEDIUM
+    status: planned
+
+  - id: UVR-1203
+    title: MCP filesystem scope exceeds project boundary
+    category: mcp
+    severity: HIGH
+    status: implemented
+    detector: mcp/filesystem-scope
+    summary: >-
+      A filesystem MCP server is rooted above the workspace, so the agent can
+      read or write outside the project it was pointed at.
+
+  - id: UVR-1204
+    title: MCP tool can mutate infrastructure
+    category: mcp
+    severity: HIGH
+    status: planned
+
+  - id: UVR-1205
+    title: MCP tool can access sensitive credential material
+    category: mcp
+    severity: HIGH
+    status: planned
+
+  # ── AWS ─────────────────────────────────────────────────────────────────
+  - id: UVR-1301
+    title: Agent-accessible identity can call iam:PassRole
+    category: aws
+    severity: HIGH
+    status: planned
+    summary: >-
+      PassRole is the classic escalation primitive: it lets a caller hand a more
+      privileged role to a service it can start.
+
+  - id: UVR-1302
+    title: Agent-accessible identity can modify IAM
+    category: aws
+    severity: HIGH
+    status: planned
+
+  - id: UVR-1303
+    title: Agent-accessible identity can modify production resources
+    category: aws
+    severity: HIGH
+    status: planned
+
+  - id: UVR-1304
+    title: Agent-accessible identity can retrieve secrets
+    category: aws
+    severity: HIGH
+    status: planned
+
+  - id: UVR-1305
+    title: Agent-accessible identity can disable or alter logging
+    category: aws
+    severity: CRITICAL
+    status: planned
+    summary: >-
+      Impairing CloudTrail removes the evidence that any other finding happened.
+      Treated as critical because it degrades every other control.
+
+  - id: UVR-1306
+    title: Agent-accessible identity can assume an administrative role
+    category: aws
+    severity: CRITICAL
+    status: planned
+
+  # ── Supply chain ────────────────────────────────────────────────────────
+  - id: UVR-1401
+    title: MCP server origin is untrusted or not verifiable
+    category: supply-chain
+    severity: MEDIUM
+    status: planned
+
+  - id: UVR-1402
+    title: Agent extension or plugin is not pinned
+    category: supply-chain
+    severity: MEDIUM
+    status: planned
+
+  - id: UVR-1403
+    title: Agent-accessible tool can install code from an untrusted source
+    category: supply-chain
+    severity: HIGH
+    status: planned
+
+  # ── Filesystem ──────────────────────────────────────────────────────────
+  - id: UVR-1501
+    title: Agent write access exceeds the workspace
+    category: filesystem
+    severity: HIGH
+    status: implemented
+    detector: fs/workspace-escape
+
+  - id: UVR-1502
+    title: Agent can access sensitive SSH material
+    category: filesystem
+    severity: HIGH
+    status: planned
+    platformRule: SEC-PK
+
+  - id: UVR-1503
+    title: Agent can access cloud credential directories
+    category: filesystem
+    severity: HIGH
+    status: planned
+    summary: >-
+      ~/.aws/credentials and equivalents are within the agent's reach. Distinct
+      from UVR-1003: this is reachability, not a resolved credential.
+
+  # ── Content reaching the agent ──────────────────────────────────────────
+  # These map to existing platform detectors. They are context risk, which is
+  # adjacent to — not the same as — action-authorization risk. See the threat
+  # model: Unveilr Guard primarily addresses the latter.
+  - id: UVR-1601
+    title: Prompt-injection pattern in agent-reachable content
+    category: content
+    severity: MEDIUM
+    status: planned
+    platformRule: PI-001
+
+  - id: UVR-1602
+    title: Tool-injection pattern in agent-reachable content
+    category: content
+    severity: MEDIUM
+    status: planned
+    platformRule: TI-001
+
+  - id: UVR-1603
+    title: Data-exfiltration pattern in agent-reachable content
+    category: content
+    severity: HIGH
+    status: planned
+    platformRule: EXF-001
