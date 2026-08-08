@@ -68,7 +68,11 @@ func Scan() []Server {
 			}
 			out = append(out, Server{
 				Name: name, Source: source, Command: s.Command,
-				Args: s.Args, URL: s.URL, Transport: transport,
+				// Redacted here, not at the print or upload site: this is the
+				// one place every consumer (terminal, --json, RegisterServer)
+				// necessarily passes through, so there is no call site left
+				// that could forget to do it.
+				Args: redactArgs(s.Args), URL: s.URL, Transport: transport,
 			})
 		}
 	}
