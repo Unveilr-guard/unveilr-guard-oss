@@ -1,4 +1,4 @@
-module github.com/unveilr/unveilr-guard
+module go.unveilr.ai/guard
 
 go 1.22
 

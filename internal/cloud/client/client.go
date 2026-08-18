@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/unveilr/unveilr-guard/internal/config"
-	mcpdiscovery "github.com/unveilr/unveilr-guard/internal/discovery/mcp"
+	"go.unveilr.ai/guard/internal/config"
+	mcpdiscovery "go.unveilr.ai/guard/internal/discovery/mcp"
 )
 
 type Client struct {

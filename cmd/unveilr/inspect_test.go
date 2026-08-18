@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/unveilr/unveilr-guard/internal/scanner/detect"
+	"go.unveilr.ai/guard/internal/scanner/detect"
 )
 
 func write(t *testing.T, dir, rel, content string) {

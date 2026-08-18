@@ -18,9 +18,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/unveilr/unveilr-guard/internal/cloud/client"
-	"github.com/unveilr/unveilr-guard/internal/config"
-	"github.com/unveilr/unveilr-guard/internal/scanner/detect"
+	"go.unveilr.ai/guard/internal/cloud/client"
+	"go.unveilr.ai/guard/internal/config"
+	"go.unveilr.ai/guard/internal/scanner/detect"
 )
 
 type Proxy struct {

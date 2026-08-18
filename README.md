@@ -47,7 +47,7 @@ changes are documented. See [ROADMAP.md](ROADMAP.md).
 
 ```bash
 # build from source
-go install github.com/unveilr/unveilr-guard/cmd/unveilr@latest
+go install go.unveilr.ai/guard/cmd/unveilr@latest
 ```
 
 ## What it does

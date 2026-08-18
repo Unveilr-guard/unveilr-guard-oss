@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/unveilr/unveilr-guard/pkg/policy"
-	"github.com/unveilr/unveilr-guard/pkg/schema"
+	"go.unveilr.ai/guard/pkg/policy"
+	"go.unveilr.ai/guard/pkg/schema"
 )
 
 // EngineName identifies decisions produced locally, as opposed to ones returned

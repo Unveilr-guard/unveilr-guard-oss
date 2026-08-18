@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/unveilr/unveilr-guard/pkg/schema"
+	"go.unveilr.ai/guard/pkg/schema"
 )
 
 // Unveilr now has THREE implementations of effect combination: this one, the

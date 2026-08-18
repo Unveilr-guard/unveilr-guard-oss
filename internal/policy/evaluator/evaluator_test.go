@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/unveilr/unveilr-guard/internal/policy/evaluator"
-	"github.com/unveilr/unveilr-guard/pkg/policy"
-	"github.com/unveilr/unveilr-guard/pkg/schema"
+	"go.unveilr.ai/guard/internal/policy/evaluator"
+	"go.unveilr.ai/guard/pkg/policy"
+	"go.unveilr.ai/guard/pkg/schema"
 )
 
 func newEval() *evaluator.Local {

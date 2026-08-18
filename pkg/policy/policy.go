@@ -19,7 +19,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/unveilr/unveilr-guard/pkg/schema"
+	"go.unveilr.ai/guard/pkg/schema"
 )
 
 // Policy is one authored policy document.

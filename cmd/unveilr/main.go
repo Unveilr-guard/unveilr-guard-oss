@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"os"
 
-	mcpadapter "github.com/unveilr/unveilr-guard/internal/adapters/mcp"
-	"github.com/unveilr/unveilr-guard/internal/cloud/client"
-	"github.com/unveilr/unveilr-guard/internal/config"
-	agentDiscovery "github.com/unveilr/unveilr-guard/internal/discovery/agent"
-	mcpdiscovery "github.com/unveilr/unveilr-guard/internal/discovery/mcp"
-	"github.com/unveilr/unveilr-guard/internal/version"
+	mcpadapter "go.unveilr.ai/guard/internal/adapters/mcp"
+	"go.unveilr.ai/guard/internal/cloud/client"
+	"go.unveilr.ai/guard/internal/config"
+	agentDiscovery "go.unveilr.ai/guard/internal/discovery/agent"
+	mcpdiscovery "go.unveilr.ai/guard/internal/discovery/mcp"
+	"go.unveilr.ai/guard/internal/version"
 )
 
 const usage = `unveilr — Local Shield CLI (v%s)
