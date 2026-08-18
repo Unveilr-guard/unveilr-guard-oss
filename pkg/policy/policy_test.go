@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unveilr/unveilr-guard/pkg/policy"
-	"github.com/unveilr/unveilr-guard/pkg/schema"
+	"go.unveilr.ai/guard/pkg/policy"
+	"go.unveilr.ai/guard/pkg/schema"
 )
 
 const valid = `

@@ -14,6 +14,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Actions are pinned by commit SHA, not by tag. A tag is mutable: whoever can
+# move it can change what runs in CI, and CI here has a checkout of the source
+# and the ability to publish. This matters more once the repository is public
+# and a supply-chain target rather than a private one.
 jobs:
   check:
     # ubuntu-22.04, not -latest. A binary linked against a newer glibc will not
@@ -22,8 +26,8 @@ jobs:
     # than inheriting whatever GitHub upgrades to next.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.22'
           check-latest: true
@@ -38,8 +42,8 @@ jobs:
     # enforcement point is permitted at another.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.22'
       - run: make conformance
@@ -50,8 +54,8 @@ jobs:
     # accumulates in testdata.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.22'
       - run: make fuzz
@@ -70,8 +74,8 @@ jobs:
           - { goos: darwin, goarch: arm64 }
           - { goos: windows, goarch: amd64 }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.22'
       - env:

@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/unveilr/unveilr-guard/internal/scanner/detect"
+	"go.unveilr.ai/guard/internal/scanner/detect"
 )
 
 // unveilr <path> is the bare, unqualified invocation: no subcommand, because
