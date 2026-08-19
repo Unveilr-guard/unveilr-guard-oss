@@ -72,7 +72,12 @@ func main() {
 	case "-h", "--help", "help":
 		fmt.Printf(usage, version.Version)
 	case "-v", "--version", "version":
-		fmt.Println(version.Version)
+		// Name the program and the edition, not just the number. This printed a
+		// bare "dev" — no program, no edition — while the commercial CLI is also
+		// invoked as `unveilr`, so a bug report pasting a version line could not
+		// be attributed to either codebase. They have different licences and
+		// different command sets; one line of output settles which one ran.
+		fmt.Printf("unveilr %s (open source)\n", version.Version)
 	default:
 		// No verb: `unveilr <path>` scans a repository for AI-SDLC findings —
 		// the bare, unqualified invocation, because this is the product's
