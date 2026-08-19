@@ -35,7 +35,8 @@ Usage:
                                          (secrets, injection, unsafe MCP config,
                                          PII). --fail-on: info|low|medium|high
                                          |critical|none (default critical).
-  unveilr scan                          Discover local coding agents + MCP servers
+  unveilr discover                      Discover local coding agents + MCP servers
+                                         ("unveilr scan" is a deprecated alias)
   unveilr register [--all]              Register discovered servers with the SaaS
   unveilr proxy --server <id> -- CMD…   Shield a local stdio MCP server
   unveilr status                        Show config + SaaS connectivity
@@ -45,8 +46,9 @@ Environment:
   UNVEILR_SAAS_URL    SaaS admin API base URL (default http://localhost:8080)
   UNVEILR_API_TOKEN   Tenant-bound bearer or service token (required online)
 
-Note: ` + "`scan`" + ` (the subcommand) means MCP server discovery, not repository
-scanning — that is the bare ` + "`unveilr <path>`" + ` invocation above.
+Note: discovery and repository scanning are different verbs on purpose.
+"unveilr discover" finds agents and MCP servers; "unveilr <path>" scans a
+repository. "scan" now means the same thing here as in the commercial CLI.
 `
 
 func main() {
@@ -56,7 +58,22 @@ func main() {
 	}
 	cfg := config.Load()
 	switch os.Args[1] {
+	case "discover":
+		cmdScan(os.Args[2:])
 	case "scan":
+		// `scan` meant agent/MCP discovery here and repository scanning in the
+		// commercial CLI — the same word, opposite meanings, in two binaries
+		// both invoked as `unveilr`. `discover` is what this actually does, and
+		// it is already the verb the commercial CLI uses for it (`mcp
+		// discover`), so the two now agree.
+		//
+		// Kept as a deprecated alias rather than removed: it is the documented
+		// command in every existing README and script, and breaking those to
+		// fix our own naming would move the cost onto users.
+		fmt.Fprintln(os.Stderr,
+			"warning: `unveilr scan` is deprecated and will change meaning; use `unveilr discover`.")
+		fmt.Fprintln(os.Stderr,
+			"         (in the commercial CLI, `scan` already means scanning a repository)")
 		cmdScan(os.Args[2:])
 	case "register":
 		requireOnlineAuth(cfg)

@@ -12,7 +12,7 @@ Discover what your agents can reach. Understand their blast radius. Block
 dangerous supported actions before they run.
 
 ```console
-$ unveilr scan                  # what agents and MCP servers exist on this machine
+$ unveilr discover              # what agents and MCP servers exist on this machine
 $ unveilr .                     # what AI-SDLC risk is in this repository
 $ unveilr proxy --server <id> -- <command>   # shield a local MCP server
 ```
@@ -52,7 +52,7 @@ go install go.unveilr.ai/guard/cmd/unveilr@latest
 
 ## What it does
 
-### Discover (`unveilr scan`)
+### Discover (`unveilr discover`)
 
 Fingerprints locally-installed coding agents (Claude Code, Claude Desktop,
 Cursor, GitHub Copilot — presence evidence only) and finds locally-configured
